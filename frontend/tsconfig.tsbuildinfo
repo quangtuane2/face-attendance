@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/pages/attendancelogspage.tsx","./src/pages/checkinpage.tsx","./src/pages/dashboardpage.tsx","./src/pages/departmentspage.tsx","./src/pages/employeespage.tsx","./src/pages/enrollfacepage.tsx","./src/pages/loginpage.tsx","./src/pages/shiftspage.tsx","./src/services/api.ts"],"version":"5.9.3"}
