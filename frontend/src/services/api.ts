@@ -43,6 +43,7 @@ export const employeeApi = {
   getAll: (params?: { departmentId?: number; shiftId?: number }) =>
     api.get('/employees', { params }),
   getById: (id: number) => api.get(`/employees/${id}`),
+  getNextCode: () => api.get<{ code: string }>('/employees/next-code'),
   create: (data: any) => api.post('/employees', data),
   update: (id: number, data: any) => api.put(`/employees/${id}`, data),
   delete: (id: number) => api.delete(`/employees/${id}`),
@@ -90,5 +91,24 @@ export const attendanceApi = {
   },
   getLogs: (params?: { employeeId?: number; from?: string; to?: string }) =>
     api.get('/attendance/logs', { params }),
-  getDashboardStats: () => api.get('/attendance/dashboard/stats'),
+  getDashboardStats: () => api.get<{
+    totalEmployees: number
+    presentOnTime: number
+    presentLate: number
+    absent: number
+  }>('/attendance/dashboard/stats'),
+  getWeeklyStats: () => api.get<Array<{
+    date: string
+    day: string
+    onTime: number
+    late: number
+    total: number
+  }>>('/attendance/dashboard/weekly'),
+  getRecentLogs: (limit = 8) => api.get<any[]>(`/attendance/dashboard/recent?limit=${limit}`),
+  exportCsv: (params?: { from?: string; to?: string }) => {
+    const q = new URLSearchParams()
+    if (params?.from) q.append('from', params.from + 'T00:00:00')
+    if (params?.to) q.append('to', params.to + 'T23:59:59')
+    return api.get(`/attendance/export/csv?${q}`, { responseType: 'blob' })
+  },
 }

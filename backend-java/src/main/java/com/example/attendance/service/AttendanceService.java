@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -161,5 +162,40 @@ public class AttendanceService {
             "presentLate", late,
             "absent", Math.max(0, total - onTime - late)
         );
+    }
+
+    /**
+     * Thống kê chấm công 7 ngày gần nhất cho biểu đồ dashboard
+     * Trả về list các object: { date, dayLabel, onTime, late, total }
+     */
+    public List<Map<String, Object>> getWeeklyStats() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        String[] dayLabels = {"CN", "T2", "T3", "T4", "T5", "T6", "T7"};
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDate date = LocalDate.now().minusDays(i);
+            LocalDateTime from = date.atStartOfDay();
+            LocalDateTime to = date.atTime(LocalTime.MAX);
+
+            long onTime = attendanceLogRepository.countCheckInByStatusAndDay(AttendanceStatus.ON_TIME, from, to);
+            long late   = attendanceLogRepository.countCheckInByStatusAndDay(AttendanceStatus.LATE, from, to);
+            long total  = attendanceLogRepository.countCheckInByDay(from, to);
+
+            Map<String, Object> dayData = new LinkedHashMap<>();
+            dayData.put("date", date.toString());
+            dayData.put("day", dayLabels[date.getDayOfWeek().getValue() % 7]);
+            dayData.put("onTime", onTime);
+            dayData.put("late", late);
+            dayData.put("total", total);
+            result.add(dayData);
+        }
+        return result;
+    }
+
+    /**
+     * Lấy N log chấm công gần nhất cho dashboard
+     */
+    public List<AttendanceLog> getRecentLogs(int limit) {
+        return attendanceLogRepository.findRecentLogs(PageRequest.of(0, limit));
     }
 }

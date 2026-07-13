@@ -23,4 +23,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         @Param("departmentId") Long departmentId,
         @Param("shiftId") Long shiftId
     );
+
+    // Lấy số thứ tự lớn nhất trong mã NV (VD: NV003 → trả về 3)
+    @Query(value = "SELECT MAX(CAST(SUBSTRING(employee_code, 3) AS UNSIGNED)) FROM employees " +
+                   "WHERE employee_code REGEXP '^NV[0-9]+$'", nativeQuery = true)
+    Optional<Long> findMaxEmployeeCodeNumber();
 }

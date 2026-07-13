@@ -1,6 +1,8 @@
 package com.example.attendance.controller;
 
+import com.example.attendance.entity.Department;
 import com.example.attendance.entity.Employee;
+import com.example.attendance.entity.Shift;
 import com.example.attendance.repository.DepartmentRepository;
 import com.example.attendance.repository.EmployeeRepository;
 import com.example.attendance.repository.ShiftRepository;
@@ -36,23 +38,96 @@ public class EmployeeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Tạo mã nhân viên tự động theo pattern NV001, NV002, ...
+     */
+    private String generateNextEmployeeCode() {
+        Long maxNum = employeeRepository.findMaxEmployeeCodeNumber().orElse(0L);
+        long next = (maxNum == null ? 0L : maxNum) + 1;
+        return String.format("NV%03d", next);
+    }
+
+    /**
+     * DTO cho create/update employee
+     */
+    record EmployeeRequest(
+        String employeeCode,
+        String fullName,
+        String email,
+        String phone,
+        DeptRef department,
+        ShiftRef shift
+    ) {}
+    record DeptRef(Long id) {}
+    record ShiftRef(Long id) {}
+
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Employee employee) {
-        if (employeeRepository.existsByEmployeeCode(employee.getEmployeeCode())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Mã nhân viên đã tồn tại"));
+    public ResponseEntity<?> create(@RequestBody EmployeeRequest req) {
+        // Tự động sinh mã nếu không cung cấp hoặc trống
+        String code = (req.employeeCode() == null || req.employeeCode().isBlank())
+            ? generateNextEmployeeCode()
+            : req.employeeCode().trim();
+
+        // Kiểm tra trùng mã
+        if (employeeRepository.existsByEmployeeCode(code)) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Mã nhân viên \"" + code + "\" đã tồn tại"));
         }
-        return ResponseEntity.ok(employeeRepository.save(employee));
+
+        // Validate họ tên
+        if (req.fullName() == null || req.fullName().isBlank()) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Họ và tên không được để trống"));
+        }
+
+        Employee emp = new Employee();
+        emp.setEmployeeCode(code);
+        emp.setFullName(req.fullName().trim());
+        emp.setEmail(nullIfBlank(req.email()));
+        emp.setPhone(nullIfBlank(req.phone()));
+        emp.setActive(true);
+        emp.setFaceEnrolled(false);
+
+        // Resolve Department
+        if (req.department() != null && req.department().id() != null) {
+            departmentRepository.findById(req.department().id())
+                .ifPresent(emp::setDepartment);
+        }
+
+        // Resolve Shift
+        if (req.shift() != null && req.shift().id() != null) {
+            shiftRepository.findById(req.shift().id())
+                .ifPresent(emp::setShift);
+        }
+
+        Employee saved = employeeRepository.save(emp);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Employee updated) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody EmployeeRequest req) {
         return employeeRepository.findById(id).map(emp -> {
-            emp.setFullName(updated.getFullName());
-            emp.setEmail(updated.getEmail());
-            emp.setPhone(updated.getPhone());
-            emp.setDepartment(updated.getDepartment());
-            emp.setShift(updated.getShift());
-            emp.setActive(updated.getActive());
+            if (req.fullName() != null && !req.fullName().isBlank())
+                emp.setFullName(req.fullName().trim());
+            emp.setEmail(nullIfBlank(req.email()));
+            emp.setPhone(nullIfBlank(req.phone()));
+
+            // Resolve Department
+            if (req.department() != null && req.department().id() != null) {
+                departmentRepository.findById(req.department().id())
+                    .ifPresent(emp::setDepartment);
+            } else {
+                emp.setDepartment(null);
+            }
+
+            // Resolve Shift
+            if (req.shift() != null && req.shift().id() != null) {
+                shiftRepository.findById(req.shift().id())
+                    .ifPresent(emp::setShift);
+            } else {
+                emp.setShift(null);
+            }
+
             return ResponseEntity.ok(employeeRepository.save(emp));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -92,5 +167,18 @@ public class EmployeeController {
                     .body(errorBody);
             }
         }).orElse(ResponseEntity.<Map<String, Object>>notFound().build());
+    }
+
+    /**
+     * Lấy mã nhân viên tiếp theo (dùng cho frontend preview)
+     */
+    @GetMapping("/next-code")
+    public ResponseEntity<Map<String, String>> getNextCode() {
+        return ResponseEntity.ok(Map.of("code", generateNextEmployeeCode()));
+    }
+
+    /** Convert chuỗi rỗng hoặc chỉ khoảng trắng thành null (tránh UNIQUE constraint với "") */
+    private String nullIfBlank(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
     }
 }

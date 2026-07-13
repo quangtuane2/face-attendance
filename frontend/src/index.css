@@ -316,6 +316,9 @@ tbody tr:hover { background: var(--bg-card-hover); }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
 
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+
 @media (max-width: 1200px) { .grid-4 { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 768px)  { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
 

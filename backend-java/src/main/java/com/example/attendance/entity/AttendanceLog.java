@@ -15,7 +15,7 @@ public class AttendanceLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
-    @JsonIgnoreProperties({"attendanceLogs", "department", "shift"})
+    @JsonIgnoreProperties({"attendanceLogs", "shift", "faceEnrolled", "createdAt", "updatedAt", "attendanceLogs"})
     private Employee employee;
 
     @Enumerated(EnumType.STRING)

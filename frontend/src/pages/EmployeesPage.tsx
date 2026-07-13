@@ -11,9 +11,10 @@ export default function EmployeesPage() {
   const [editTarget, setEditTarget] = useState<any>(null)
   const [filterDept, setFilterDept] = useState('')
   const [search, setSearch] = useState('')
+  const [nextCode, setNextCode] = useState('')  // mã NV tự động
 
   const [form, setForm] = useState({
-    employeeCode: '', fullName: '', email: '', phone: '',
+    fullName: '', email: '', phone: '',
     departmentId: '', shiftId: ''
   })
 
@@ -34,14 +35,17 @@ export default function EmployeesPage() {
 
   const openCreate = () => {
     setEditTarget(null)
-    setForm({ employeeCode: '', fullName: '', email: '', phone: '', departmentId: '', shiftId: '' })
+    setForm({ fullName: '', email: '', phone: '', departmentId: '', shiftId: '' })
+    // Fetch mã NV tiếp theo
+    employeeApi.getNextCode()
+      .then(r => setNextCode(r.data.code))
+      .catch(() => setNextCode('NV???'))
     setShowModal(true)
   }
 
   const openEdit = (emp: any) => {
     setEditTarget(emp)
     setForm({
-      employeeCode: emp.employeeCode,
       fullName: emp.fullName,
       email: emp.email || '',
       phone: emp.phone || '',
@@ -52,8 +56,17 @@ export default function EmployeesPage() {
   }
 
   const handleSubmit = async () => {
+    if (!form.fullName.trim()) {
+      toast.error('Vui lòng nhập họ và tên')
+      return
+    }
     const payload = {
-      ...form,
+      // Khi tạo mới: employeeCode để trống → backend tự sinh
+      // Khi sửa: không thay đổi mã
+      employeeCode: editTarget ? editTarget.employeeCode : '',
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
       department: form.departmentId ? { id: Number(form.departmentId) } : null,
       shift: form.shiftId ? { id: Number(form.shiftId) } : null,
     }
@@ -62,8 +75,8 @@ export default function EmployeesPage() {
         await employeeApi.update(editTarget.id, payload)
         toast.success('Cập nhật thành công')
       } else {
-        await employeeApi.create(payload)
-        toast.success('Thêm nhân viên thành công')
+        const res = await employeeApi.create(payload)
+        toast.success(`Đã thêm nhân viên — Mã: ${res.data.employeeCode}`)
       }
       setShowModal(false)
       load()
@@ -171,15 +184,24 @@ export default function EmployeesPage() {
               <button className="btn btn-icon btn-secondary" onClick={() => setShowModal(false)}>✕</button>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Mã nhân viên *</label>
-                  <input className="form-input" placeholder="NV001" value={form.employeeCode} onChange={e => setForm(f => ({ ...f, employeeCode: e.target.value }))} disabled={!!editTarget} />
+              {/* Mã NV: tự động khi tạo mới, chỉ đọc khi sửa */}
+              <div className="flex gap-4 items-center" style={{
+                background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)',
+                padding: '0.75rem 1rem',
+              }}>
+                <span style={{ fontSize: '1.1rem' }}>🪪</span>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+                    {editTarget ? 'Mã nhân viên' : 'Mã nhân viên (tự động)'}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--accent)', letterSpacing: 1 }}>
+                    {editTarget ? editTarget.employeeCode : (nextCode || '...')}
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Họ và tên *</label>
-                  <input className="form-input" placeholder="Nguyễn Văn A" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
-                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Họ và tên *</label>
+                <input className="form-input" placeholder="Nguyễn Văn A" value={form.fullName} onChange={e => setForm(f => ({ ...f, fullName: e.target.value }))} />
               </div>
               <div className="grid-2">
                 <div className="form-group">

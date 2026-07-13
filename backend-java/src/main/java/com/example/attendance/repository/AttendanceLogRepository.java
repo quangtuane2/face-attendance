@@ -1,7 +1,9 @@
 package com.example.attendance.repository;
 
 import com.example.attendance.entity.AttendanceLog;
+import com.example.attendance.entity.AttendanceStatus;
 import com.example.attendance.entity.CheckType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,8 +43,30 @@ public interface AttendanceLogRepository extends JpaRepository<AttendanceLog, Lo
     @Query("SELECT COUNT(a) FROM AttendanceLog a WHERE a.checkType = 'IN' " +
            "AND a.checkTime BETWEEN :from AND :to AND a.status = :status")
     long countByStatusAndDate(
-        @Param("status") com.example.attendance.entity.AttendanceStatus status,
+        @Param("status") AttendanceStatus status,
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to
     );
+
+    // Đếm check-in theo ngày cụ thể (cho biểu đồ 7 ngày)
+    @Query("SELECT COUNT(a) FROM AttendanceLog a WHERE a.checkType = 'IN' " +
+           "AND a.checkTime BETWEEN :from AND :to AND a.status = :status")
+    long countCheckInByStatusAndDay(
+        @Param("status") AttendanceStatus status,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+
+    // Tổng số check-in trong 1 ngày
+    @Query("SELECT COUNT(a) FROM AttendanceLog a WHERE a.checkType = 'IN' " +
+           "AND a.checkTime BETWEEN :from AND :to")
+    long countCheckInByDay(
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+
+    // Lấy log gần đây nhất (dùng Pageable để limit)
+    @Query("SELECT a FROM AttendanceLog a LEFT JOIN FETCH a.employee e " +
+           "LEFT JOIN FETCH e.department ORDER BY a.checkTime DESC")
+    List<AttendanceLog> findRecentLogs(Pageable pageable);
 }

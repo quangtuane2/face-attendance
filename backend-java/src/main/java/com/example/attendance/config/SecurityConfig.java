@@ -53,7 +53,10 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/attendance/check-in").permitAll()  // thiết bị chấm công không cần login
+                .requestMatchers("/api/attendance/check-in").permitAll()
+                .requestMatchers("/api/employees/next-code").permitAll() // preview mã NV (không nhạy cảm)
+                // Spring Boot error forwarding — phải permitAll để trả lỗi thật
+                .requestMatchers("/error").permitAll()
                 // Tất cả còn lại cần xác thực
                 .anyRequest().authenticated()
             )
