@@ -1,17 +1,29 @@
 package com.example.attendance.service;
 
-import com.example.attendance.entity.*;
-import com.example.attendance.repository.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
-import java.util.*;
+import com.example.attendance.entity.AttendanceLog;
+import com.example.attendance.entity.AttendanceStatus;
+import com.example.attendance.entity.CheckType;
+import com.example.attendance.entity.Employee;
+import com.example.attendance.entity.Shift;
+import com.example.attendance.repository.AttendanceLogRepository;
+import com.example.attendance.repository.EmployeeRepository;
 
 @Service
 public class AttendanceService {
@@ -78,6 +90,19 @@ public class AttendanceService {
                     "employee", buildEmployeeInfo(employee)
                 );
             }
+
+            // KIỂM TRA THỜI GIAN GIỮA IN VÀ OUT (Ngăn quét đúp liên tục)
+            AttendanceLog inLog = existingIn.get();
+            long minutesSinceIn = Duration.between(inLog.getCheckTime(), now).toMinutes();
+            if (minutesSinceIn < 60) {
+                String timeIn = inLog.getCheckTime().toLocalTime().toString().substring(0, 5);
+                return Map.of(
+                    "success", false,
+                    "message", "Bạn vừa chấm công VÀO lúc " + timeIn + ". Vui lòng chờ ít nhất 60 phút để chấm công RA.",
+                    "employee", buildEmployeeInfo(employee)
+                );
+            }
+
             checkType = CheckType.OUT;
         }
 

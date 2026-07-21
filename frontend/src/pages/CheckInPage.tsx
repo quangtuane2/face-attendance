@@ -18,11 +18,12 @@ export default function CheckInPage() {
   const [result, setResult] = useState<ResultState>(null)
   const [autoScan, setAutoScan] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const cooldownRef = useRef(false)
   const now = new Date()
 
   // Chụp và gửi lên server
   const captureAndRecognize = useCallback(async () => {
-    if (scanning) return
+    if (scanning || cooldownRef.current) return
     const imageSrc = webcamRef.current?.getScreenshot()
     if (!imageSrc) return
 
@@ -35,6 +36,14 @@ export default function CheckInPage() {
       const blob = await res.blob()
       const apiRes = await attendanceApi.checkIn(blob)
       setResult(apiRes.data)
+
+      if (apiRes.data.success || apiRes.data.employee) {
+        // Tạm dừng quét 5 giây sau khi nhận diện được (kể cả thành công hay bị nhắc nhở)
+        cooldownRef.current = true
+        setTimeout(() => {
+          cooldownRef.current = false
+        }, 5000)
+      }
     } catch (err: any) {
       setResult({ success: false, message: 'Lỗi kết nối server' })
     } finally {
@@ -47,7 +56,8 @@ export default function CheckInPage() {
   // Auto scan mode
   useEffect(() => {
     if (autoScan) {
-      intervalRef.current = setInterval(captureAndRecognize, 2000)
+      // Quét mỗi 1.5 giây để lần đầu nhận diện nhanh
+      intervalRef.current = setInterval(captureAndRecognize, 1500)
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
@@ -92,16 +102,16 @@ export default function CheckInPage() {
         {autoScan && !result && <div className="scan-line" />}
 
         {/* Corner brackets */}
-        {['top-left','top-right','bottom-left','bottom-right'].map(pos => (
+        {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(pos => (
           <div key={pos} style={{
             position: 'absolute',
             width: 40, height: 40,
             borderColor: result?.success ? 'var(--success)' : autoScan ? 'var(--accent)' : 'var(--border)',
             borderStyle: 'solid',
-            ...(pos === 'top-left'     ? { top: 16, left: 16, borderWidth: '3px 0 0 3px', borderRadius: '8px 0 0 0' } :
-                pos === 'top-right'    ? { top: 16, right: 16, borderWidth: '3px 3px 0 0', borderRadius: '0 8px 0 0' } :
-                pos === 'bottom-left'  ? { bottom: 16, left: 16, borderWidth: '0 0 3px 3px', borderRadius: '0 0 0 8px' } :
-                                        { bottom: 16, right: 16, borderWidth: '0 3px 3px 0', borderRadius: '0 0 8px 0' }),
+            ...(pos === 'top-left' ? { top: 16, left: 16, borderWidth: '3px 0 0 3px', borderRadius: '8px 0 0 0' } :
+              pos === 'top-right' ? { top: 16, right: 16, borderWidth: '3px 3px 0 0', borderRadius: '0 8px 0 0' } :
+                pos === 'bottom-left' ? { bottom: 16, left: 16, borderWidth: '0 0 3px 3px', borderRadius: '0 0 0 8px' } :
+                  { bottom: 16, right: 16, borderWidth: '0 3px 3px 0', borderRadius: '0 0 8px 0' }),
             transition: 'border-color 0.3s',
           }} />
         ))}
@@ -125,8 +135,12 @@ export default function CheckInPage() {
               </>
             ) : (
               <>
-                <div className="result-icon">❓</div>
-                <div className="result-name" style={{ color: 'var(--danger)' }}>Không nhận diện được</div>
+                <div className="result-icon">
+                  {result.message.includes('Bạn') ? '⏳' : '❓'}
+                </div>
+                <div className="result-name" style={{ color: result.message.includes('Bạn') ? 'var(--warning)' : 'var(--danger)' }}>
+                  {result.message.includes('Bạn') ? 'Thông báo' : 'Không nhận diện được'}
+                </div>
                 <div className="result-info">{result.message}</div>
               </>
             )}

@@ -1,6 +1,5 @@
-// ═══════════════════════════════════════════════
+
 // API service — axios instance + typed calls
-// ═══════════════════════════════════════════════
 import axios from 'axios'
 
 const api = axios.create({
@@ -30,7 +29,7 @@ api.interceptors.response.use(
 
 export default api
 
-// ── Auth ───────────────────────────────────────
+//  Auth 
 export const authApi = {
   login: (username: string, password: string) =>
     api.post<{ token: string; username: string; fullName: string; role: string }>(
@@ -38,7 +37,7 @@ export const authApi = {
     ),
 }
 
-// ── Employees ──────────────────────────────────
+// Employees 
 export const employeeApi = {
   getAll: (params?: { departmentId?: number; shiftId?: number }) =>
     api.get('/employees', { params }),
@@ -63,7 +62,7 @@ export const employeeApi = {
   },
 }
 
-// ── Departments ────────────────────────────────
+// Departments 
 export const departmentApi = {
   getAll: () => api.get('/departments'),
   getTree: () => api.get('/departments/tree'),
@@ -72,7 +71,7 @@ export const departmentApi = {
   delete: (id: number) => api.delete(`/departments/${id}`),
 }
 
-// ── Shifts ─────────────────────────────────────
+//  Shifts 
 export const shiftApi = {
   getAll: () => api.get('/shifts'),
   create: (data: any) => api.post('/shifts', data),
@@ -80,7 +79,7 @@ export const shiftApi = {
   delete: (id: number) => api.delete(`/shifts/${id}`),
 }
 
-// ── Attendance ─────────────────────────────────
+// Attendance
 export const attendanceApi = {
   checkIn: (imageBlob: Blob) => {
     const form = new FormData()
