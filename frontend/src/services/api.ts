@@ -140,3 +140,14 @@ export const taskApi = {
   deleteComment: (taskId: number, commentId: number) =>
     api.delete(`/tasks/${taskId}/comments/${commentId}`),
 }
+
+// Users (quản lý tài khoản)
+export const userApi = {
+  getAll: () => api.get('/users'),
+  create: (data: any) => api.post('/users', data),
+  update: (id: number, data: any) => api.put(`/users/${id}`, data),
+  delete: (id: number) => api.delete(`/users/${id}`),
+  toggle: (id: number) => api.patch(`/users/${id}/toggle`, {}),
+  createForEmployee: (employeeId: number, username: string, password: string) =>
+    api.post(`/users/create-for-employee/${employeeId}`, { username, password }),
+}

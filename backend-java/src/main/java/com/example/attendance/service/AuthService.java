@@ -27,6 +27,7 @@ public class AuthService {
         String token = jwtUtils.generateToken(request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-        return new JwtResponse(token, user.getUsername(), user.getFullName(), user.getRole().name());
+        Long employeeId = (user.getEmployee() != null) ? user.getEmployee().getId() : null;
+        return new JwtResponse(token, user.getUsername(), user.getFullName(), user.getRole().name(), employeeId);
     }
 }

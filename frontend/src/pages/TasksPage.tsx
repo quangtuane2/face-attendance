@@ -54,6 +54,12 @@ const emptyForm = () => ({
   departmentId: '', startDate: '', dueDate: '', progress: 0,
 })
 
+// Role helpers
+const getCurrentUser = () => JSON.parse(localStorage.getItem('user') || '{}')
+const getCurrentRole = () => getCurrentUser().role || 'CHUYEN_VIEN'
+const isCHUYEN_VIEN  = () => getCurrentRole() === 'CHUYEN_VIEN'
+const isManager      = () => ['ADMIN', 'TRUONG_PHONG', 'PHO_PHONG'].includes(getCurrentRole())
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [employees, setEmployees] = useState<any[]>([])
@@ -77,21 +83,29 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPriority, setFilterPriority] = useState('')
 
-  // Load
+  // Load – Chuyên viên chỉ thấy task được giao cho mình
   const load = async () => {
     setLoading(true)
     try {
-      const [tRes, eRes, dRes] = await Promise.all([
-        taskApi.getAll({
-          status: filterStatus || undefined,
-          priority: filterPriority || undefined,
-        }),
-        employeeApi.getAll(),
-        departmentApi.getAll(),
-      ])
+      const user = getCurrentUser()
+      const params: any = {
+        status:   filterStatus   || undefined,
+        priority: filterPriority || undefined,
+      }
+      // Chuyên viên: chỉ load task assignee = mình
+      if (isCHUYEN_VIEN() && user.employeeId) {
+        params.assigneeId = user.employeeId
+      }
+
+      const promises: Promise<any>[] = [taskApi.getAll(params)]
+      // Managers mới cần load danh sách nhân viên / phòng ban để giao việc
+      if (isManager()) {
+        promises.push(employeeApi.getAll(), departmentApi.getAll())
+      }
+      const [tRes, eRes, dRes] = await Promise.all(promises)
       setTasks(tRes.data as Task[])
-      setEmployees(eRes.data as any[])
-      setDepartments(dRes.data as any[])
+      if (eRes) setEmployees(eRes.data as any[])
+      if (dRes) setDepartments(dRes.data as any[])
     } finally {
       setLoading(false)
     }
@@ -194,9 +208,11 @@ export default function TasksPage() {
       {/*  Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>📋 Quản lý Công việc</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>✅ Công việc</h1>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13 }}>
-            Giao việc, theo dõi tiến độ giữa các phòng ban
+            {isCHUYEN_VIEN()
+              ? 'Danh sách công việc được giao cho bạn'
+              : 'Giao việc, theo dõi tiến độ giữa các phòng ban'}
           </p>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -239,7 +255,9 @@ export default function TasksPage() {
               onClick={() => setView('list')}
             >☰ Danh sách</button>
           </div>
-          <button className="btn btn-primary" onClick={openCreate}>+ Tạo công việc</button>
+          {isManager() && (
+            <button className="btn btn-primary" onClick={openCreate}>+ Tạo công việc</button>
+          )}
         </div>
       </div>
 

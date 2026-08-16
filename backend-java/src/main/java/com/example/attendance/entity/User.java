@@ -1,10 +1,12 @@
 package com.example.attendance.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -20,9 +22,15 @@ public class User {
     @Column(name = "full_name", length = 150)
     private String fullName;
 
+    // Liên kết tới hồ sơ nhân viên (null nếu là admin/hr)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id")
+    @JsonIgnoreProperties({"attendanceLogs", "department", "shift"})
+    private Employee employee;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role = UserRole.VIEWER;
+    private UserRole role = UserRole.CHUYEN_VIEN;
 
     @Column
     private Boolean active = true;
@@ -46,6 +54,9 @@ public class User {
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 
+    public Employee getEmployee() { return employee; }
+    public void setEmployee(Employee employee) { this.employee = employee; }
+
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }
 
@@ -54,3 +65,4 @@ public class User {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
+

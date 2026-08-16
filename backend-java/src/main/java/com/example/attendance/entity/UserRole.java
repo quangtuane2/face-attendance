@@ -1,7 +1,8 @@
 package com.example.attendance.entity;
 
 public enum UserRole {
-    ADMIN, // Full access
-    HR,    // HR management and attendance reports
-    VIEWER // View only
+    ADMIN,        // Quản trị viên – toàn quyền, xem mọi dashboard
+    TRUONG_PHONG, // Trưởng phòng – quản lý nhân viên + task trong phòng
+    PHO_PHONG,    // Phó phòng    – tương tự trưởng phòng
+    CHUYEN_VIEN   // Chuyên viên  – chỉ xem task được giao, họp, comment
 }
