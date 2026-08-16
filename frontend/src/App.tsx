@@ -7,6 +7,7 @@ import EnrollFacePage    from './pages/EnrollFacePage'
 import DepartmentsPage   from './pages/DepartmentsPage'
 import ShiftsPage        from './pages/ShiftsPage'
 import AttendanceLogsPage from './pages/AttendanceLogsPage'
+import TasksPage         from './pages/TasksPage'
 
 const isLoggedIn = () => !!localStorage.getItem('token')
 
@@ -32,9 +33,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
     { to: '/employees',   label: 'Nhân viên',          icon: '👥', section: 'QUẢN LÝ' },
     { to: '/departments', label: 'Phòng ban',           icon: '🏢', section: 'QUẢN LÝ' },
     { to: '/shifts',      label: 'Ca làm việc',         icon: '⏰', section: 'QUẢN LÝ' },
+    { to: '/tasks',       label: 'Công việc',           icon: '📋', section: 'CÔNG VIỆC' },
   ]
 
-  const sections = ['TỔNG QUAN', 'QUẢN LÝ']
+  const sections = ['TỔNG QUAN', 'QUẢN LÝ', 'CÔNG VIỆC']
 
   return (
     <div className="app-layout">
@@ -107,6 +109,7 @@ export default function App() {
       <Route path="/departments" element={<ProtectedLayout><DepartmentsPage /></ProtectedLayout>} />
       <Route path="/shifts" element={<ProtectedLayout><ShiftsPage /></ProtectedLayout>} />
       <Route path="/attendance" element={<ProtectedLayout><AttendanceLogsPage /></ProtectedLayout>} />
+      <Route path="/tasks"      element={<ProtectedLayout><TasksPage /></ProtectedLayout>} />
     </Routes>
   )
 }

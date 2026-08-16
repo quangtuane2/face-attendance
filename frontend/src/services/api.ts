@@ -111,3 +111,32 @@ export const attendanceApi = {
     return api.get(`/attendance/export/csv?${q}`, { responseType: 'blob' })
   },
 }
+
+// Tasks
+export const taskApi = {
+  getAll: (params?: {
+    status?: string; priority?: string;
+    assigneeId?: number; departmentId?: number; creatorId?: number
+  }) => api.get('/tasks', { params }),
+
+  getById:  (id: number) => api.get(`/tasks/${id}`),
+  create:   (data: any)  => api.post('/tasks', data),
+  update:   (id: number, data: any) => api.put(`/tasks/${id}`, data),
+  delete:   (id: number) => api.delete(`/tasks/${id}`),
+
+  updateStatus:   (id: number, status: string) =>
+    api.patch(`/tasks/${id}/status`, { status }),
+  updateProgress: (id: number, progress: number) =>
+    api.patch(`/tasks/${id}/progress`, { progress }),
+
+  getStats: () => api.get<{
+    total: number; new: number; inProgress: number;
+    review: number; done: number; overdue: number
+  }>('/tasks/stats'),
+
+  getComments:   (taskId: number) => api.get(`/tasks/${taskId}/comments`),
+  addComment:    (taskId: number, authorId: number, content: string) =>
+    api.post(`/tasks/${taskId}/comments`, { authorId, content }),
+  deleteComment: (taskId: number, commentId: number) =>
+    api.delete(`/tasks/${taskId}/comments/${commentId}`),
+}
