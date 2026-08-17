@@ -9,6 +9,8 @@ import ShiftsPage         from './pages/ShiftsPage'
 import AttendanceLogsPage from './pages/AttendanceLogsPage'
 import TasksPage          from './pages/TasksPage'
 import UsersPage          from './pages/UsersPage'
+import MeetingsPage       from './pages/MeetingsPage'
+import MeetingRoomPage    from './pages/MeetingRoomPage'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 type Role = 'ADMIN' | 'TRUONG_PHONG' | 'PHO_PHONG' | 'CHUYEN_VIEN'
@@ -29,16 +31,18 @@ const ROLE_LABEL: Record<string, string> = {
 function ProtectedRoute({
   children,
   allowedRoles,
+  noShell = false,
 }: {
   children: React.ReactNode
   allowedRoles?: Role[]
+  noShell?: boolean
 }) {
   if (!isLogged()) return <Navigate to="/login" replace />
   const role = getRole()
   if (allowedRoles && !allowedRoles.includes(role)) {
-    // Chuyên viên vào trang không được phép → redirect về /tasks
     return <Navigate to="/tasks" replace />
   }
+  if (noShell) return <>{children}</>
   return <AppShell>{children}</AppShell>
 }
 
@@ -81,6 +85,10 @@ function AppShell({ children }: { children: React.ReactNode }) {
     // CÔNG VIỆC – tất cả role
     {
       to: '/tasks', label: 'Công việc', icon: '✅', section: 'CÔNG VIỆC',
+      roles: ['ADMIN', 'TRUONG_PHONG', 'PHO_PHONG', 'CHUYEN_VIEN'] as Role[],
+    },
+    {
+      to: '/meetings', label: 'Cuộc họp', icon: '📅', section: 'CÔNG VIỆC',
       roles: ['ADMIN', 'TRUONG_PHONG', 'PHO_PHONG', 'CHUYEN_VIEN'] as Role[],
     },
     // HỆ THỐNG – chỉ ADMIN
@@ -209,6 +217,17 @@ export default function App() {
       <Route path="/tasks" element={
         <ProtectedRoute>
           <TasksPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/meetings" element={
+        <ProtectedRoute>
+          <MeetingsPage />
+        </ProtectedRoute>
+      } />
+      {/* Phòng họp video – fullscreen, không có sidebar */}
+      <Route path="/meetings/:id/room" element={
+        <ProtectedRoute noShell>
+          <MeetingRoomPage />
         </ProtectedRoute>
       } />
     </Routes>

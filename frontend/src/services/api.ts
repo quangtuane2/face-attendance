@@ -151,3 +151,27 @@ export const userApi = {
   createForEmployee: (employeeId: number, username: string, password: string) =>
     api.post(`/users/create-for-employee/${employeeId}`, { username, password }),
 }
+
+// Meetings (cuộc họp)
+export const meetingApi = {
+  getAll: (params?: { employeeId?: number; status?: string }) =>
+    api.get('/meetings', { params }),
+  getUpcoming: () => api.get('/meetings/upcoming'),
+  getById: (id: number) => api.get(`/meetings/${id}`),
+  create: (data: any) => api.post('/meetings', data),
+  update: (id: number, data: any) => api.put(`/meetings/${id}`, data),
+  delete: (id: number) => api.delete(`/meetings/${id}`),
+  updateStatus: (id: number, status: string) =>
+    api.patch(`/meetings/${id}/status`, { status }),
+  updateNotes: (id: number, notes: string) =>
+    api.patch(`/meetings/${id}/notes`, { notes }),
+
+  // Participants
+  getParticipants: (id: number) => api.get(`/meetings/${id}/participants`),
+  addParticipant: (id: number, employeeId: number) =>
+    api.post(`/meetings/${id}/participants`, { employeeId }),
+  updateParticipantStatus: (meetingId: number, empId: number, status: string) =>
+    api.patch(`/meetings/${meetingId}/participants/${empId}/status`, { status }),
+  removeParticipant: (meetingId: number, empId: number) =>
+    api.delete(`/meetings/${meetingId}/participants/${empId}`),
+}
